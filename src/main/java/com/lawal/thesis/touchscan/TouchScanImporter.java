@@ -27,6 +27,8 @@ public class TouchScanImporter {
 
     private static final Logger LOG = Logger.getLogger(TouchScanImporter.class);
 
+    final private String DUPLICATE_MAKER = "__duplicate__";
+    final private String time_header = "Time";
 
     private final String url;
     private final String userName;
@@ -40,7 +42,7 @@ public class TouchScanImporter {
     }
 
 
-    private static List<DataPoint> readFile(Path path) {
+    private List<DataPoint> readFile(Path path) {
 
 
         String cleanFileContent = readAndCleanFileContent(path);
@@ -51,12 +53,13 @@ public class TouchScanImporter {
             List<CSVRecord> records = parser.getRecords();
             for (Map.Entry<String, Integer> entry : parser.getHeaderMap().entrySet()) {
                 String header = entry.getKey();
-                if (header.equals("Time")) continue;
+                if (header.equals(time_header)) continue;
+                if (header.contains(DUPLICATE_MAKER)) continue;
 
                 DataPoint dp = new DataPoint();
                 dp.setName(header.trim());
                 records.forEach(rec -> {
-                    String tm = rec.get("Time");
+                    String tm = rec.get(time_header);
                     String val = rec.get(header);
                     dp.add(tm, val);
 
@@ -74,7 +77,7 @@ public class TouchScanImporter {
 
 
     /*Removes first comment in the file. The CSV parser seems buggy*/
-    private static String readAndCleanFileContent(Path path) {
+    private String readAndCleanFileContent(Path path) {
         StringBuffer linesBuffer = new StringBuffer();
 
         try (InputStreamReader isr = new InputStreamReader(new FileInputStream(path.toFile()), StandardCharsets.UTF_8)) {
@@ -85,7 +88,11 @@ public class TouchScanImporter {
                 boolean headerProcessed = false;
                 while ((line = bre.readLine()) != null) {
                     line = line.trim();
-                    final boolean startsWith = line.startsWith(String.valueOf('#'));
+                    //TODO some charset messup here ??
+                    int indexOf = line.indexOf('#');
+                    final boolean startsWithChar = indexOf > 0;
+                    boolean startsWithString = line.startsWith("#");
+                    boolean startsWith = startsWithChar || startsWithString;
                     if (startsWith) {
                         //skip  comment
                         continue;
@@ -111,13 +118,19 @@ public class TouchScanImporter {
         return linesBuffer.toString();
     }
 
-    private static String processHeader(String line) {
+
+    //
+    private String processHeader(String line) {
+
+
         Set<String> headers = new LinkedHashSet<>();
 
         String[] split = line.split(",");
+
         for (String header : split) {
+
             if (headers.contains(header)) {
-                headers.add(header + "2");
+                headers.add(header + DUPLICATE_MAKER);
             } else
                 headers.add(header);
         }
@@ -139,7 +152,7 @@ public class TouchScanImporter {
         } catch (ValidAPIParamException e) {
             e.printStackTrace();
             return false;
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             return false;
         }
@@ -165,15 +178,14 @@ public class TouchScanImporter {
         }
 
 
-
-        int BATCH_SIZE =1000;
+        int BATCH_SIZE = 1000;
 
         LOG.info("Number of values" + datanodeWriteValues.size());
         IOTAPIClient client = new IOTAPIClient(url, userName, password);
         DeviceDetails device = getOrCreateDevice(deviceName, client);
 
 
-        for (List<DatanodeWriteValue> batch : ListUtils.partition(datanodeWriteValues,BATCH_SIZE)){
+        for (List<DatanodeWriteValue> batch : ListUtils.partition(datanodeWriteValues, BATCH_SIZE)) {
 
             client.writeData(device.getDeviceId(), batch);
             TimeUnit.MILLISECONDS.sleep(200);
@@ -184,7 +196,7 @@ public class TouchScanImporter {
     }
 
     private DeviceDetails getOrCreateDevice(String deviceName, IOTAPIClient client) throws ValidAPIParamException {
-        PagedResult<DeviceDetails> deviceList = client.getDeviceList(0,100);
+        PagedResult<DeviceDetails> deviceList = client.getDeviceList(0, 100);
         Optional<DeviceDetails> deviceDetailsOptional = deviceList.getResults().stream().filter(dev -> dev.getName().equals(deviceName)).findAny();
         if (deviceDetailsOptional.isPresent()) return deviceDetailsOptional.get();
 
