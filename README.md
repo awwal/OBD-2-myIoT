@@ -16,3 +16,4 @@ This project parses obd car data logged using the TouchScan App to the iot produ
 
 Example:  java -jar com.lawal.thesis-1.0-SNAPSHOT-jar-with-dependencies.jar C:\Users\Lawal\Dropbox\Apps\TouchScan\CsvLogs\FP31881DF87D1 ToyotaCorolla smartuser sM8pswd
 
+Download jar https://github.com/awwal/OBD-2-myIoT/releases/download/v1.0.0/com.lawal.thesis-1.0-SNAPSHOT-jar-with-dependencies.jar
