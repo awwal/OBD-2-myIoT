@@ -36,27 +36,22 @@ public class DataPoint {
         return 0;
     }
 
-    public static void main(String[] args) throws ParseException {
-        String ti = "Mass air flow rate (g/s)";
-        String d = "04/04/2015 12:51:28.3671 pm";
-
-        String line ="# StartTime = 04/16/2015 09:19:51.8162 am";
-
-
-        final boolean startsWith = line.startsWith(String.valueOf('#'));
-
-        System.out.println(startsWith);
-
-
-    }
 
     public String getName() {
         return name;
     }
 
     public void setName(String name) {
-        this.name = name;
+        this.name = parseName(name);
         this.unit = parseUnit(name);
+    }
+
+    private String parseName(String name) {
+
+        int lf = name.lastIndexOf("(");
+        if(lf <0)return name;
+
+        return  name.substring(0, lf);
     }
 
     private String parseUnit(String ti) {

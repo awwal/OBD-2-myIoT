@@ -78,7 +78,7 @@ public class TouchScanImporter {
     }
 
 
-    /*Removes first comment in the file. The CSV parser seems buggy*/
+    /*Removes first comment in the file. The CSV parser also seems to have a problem ignoring commentMaker # */
     private String readAndCleanFileContent(Path path) {
         StringBuffer linesBuffer = new StringBuffer();
 
