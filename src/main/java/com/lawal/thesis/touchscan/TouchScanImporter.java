@@ -29,6 +29,8 @@ public class TouchScanImporter {
 
     final private String DUPLICATE_MAKER = "__duplicate__";
     final private String time_header = "Time";
+    private final int BATCH_SIZE = 1000;
+
 
     private final String url;
     private final String userName;
@@ -178,7 +180,6 @@ public class TouchScanImporter {
         }
 
 
-        int BATCH_SIZE = 1000;
 
         LOG.info("Number of values" + datanodeWriteValues.size());
         IOTAPIClient client = new IOTAPIClient(url, userName, password);
@@ -186,7 +187,7 @@ public class TouchScanImporter {
 
 
         for (List<DatanodeWriteValue> batch : ListUtils.partition(datanodeWriteValues, BATCH_SIZE)) {
-
+            LOG.info("sending "+batch.size()+" to server. DeviceId "+device.getDeviceId());
             client.writeData(device.getDeviceId(), batch);
             TimeUnit.MILLISECONDS.sleep(200);
 
